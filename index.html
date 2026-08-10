@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบการสอบออนไลน์พร้อมการควบคุมสภาพแวดล้อม</title>
+    <style>
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            text-align: center; 
+            margin-top: 30px; 
+            background-color: #f4f6f9;
+        }
+        #timer-container { 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #D32F2F; 
+            margin-bottom: 20px; 
+            padding: 10px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        #exam-container { 
+            width: 100%; 
+            max-width: 900px; 
+            height: 800px; 
+            margin: 0 auto; 
+            border: 2px solid #bdbdbd; 
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+        }
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+        #warning-message { 
+            display: none; 
+            color: #c62828; 
+            font-size: 22px; 
+            font-weight: bold; 
+            margin-top: 100px; 
+            padding: 20px;
+            background-color: #ffcdd2;
+            border: 2px solid #ef5350;
+            border-radius: 8px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="timer-container">เวลาที่เหลือสำหรับการทำข้อสอบ: <span id="time">10:00</span> นาที</div>
+
+    <!-- ส่วนแสดงผลเมื่อมีการละเมิดเงื่อนไขการสอบ -->
+    <div id="warning-message">
+        การสอบถูกยกเลิกโดยอัตโนมัติ<br>
+        <span id="violation-reason" style="font-size: 18px; font-weight: normal;"></span>
+    </div>
+
+    <!-- ส่วนพื้นที่แสดงข้อสอบ -->
+    <div id="exam-container">
+        <!-- หมายเหตุ: เปลี่ยน URL_ของ_GOOGLE_FORM_ที่นี่ เป็นลิงก์ฟอร์มที่ต้องการใช้งานจริง -->
+        <iframe id="google-form" src="https://docs.google.com/forms/d/e/1FAIpQLSfr-wkyN78zt4kd91l_AWCK2sGGpWZFfJWsG8JcRkRYIbZjjQ/viewform?usp=dialog" frameborder="0" marginheight="0" marginwidth="0">กำลังโหลดกลไกการสอบ...</iframe>
+    </div>
+
+    <script>
+        // 1. การกำหนดตัวแปรโครงสร้างหลัก
+        const DURATION_MINUTES = 10;
+        let timeInSeconds = DURATION_MINUTES * 60; // 600 วินาที
+        const timeDisplay = document.getElementById('time');
+        const examContainer = document.getElementById('exam-container');
+        const warningMessage = document.getElementById('warning-message');
+        const violationReason = document.getElementById('violation-reason');
+        const timerContainer = document.getElementById('timer-container');
+        let isExamActive = true;
+
+        // 2. ฟังก์ชันกลไกการนับเวลาถอยหลัง (Interval-based Countdown Mechanism)
+        const countdownTimer = setInterval(() => {
+            if (!isExamActive) {
+                clearInterval(countdownTimer);
+                return;
+            }
+
+            timeInSeconds--;
+            let minutes = Math.floor(timeInSeconds / 60);
+            let seconds = timeInSeconds % 60;
+
+            // การจัดการรูปแบบการแสดงผลตัวเลข
+            let displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+            let displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+
+            timeDisplay.textContent = `${displayMinutes}:${displaySeconds}`;
+
+            if (timeInSeconds <= 0) {
+                clearInterval(countdownTimer);
+                terminateExamination('ระบบหมดเวลาการทำข้อสอบตามที่กำหนด');
+            }
+        }, 1000);
+
+        // 3. ฟังก์ชันยุติการสอบและทำลายข้อมูล (Termination and DOM Destruction)
+        function terminateExamination(reason) {
+            isExamActive = false;
+            
+            // ลบ iframe ออกจาก Document Object Model (DOM) เพื่อตัดการเชื่อมต่อกับเซิร์ฟเวอร์
+            examContainer.innerHTML = ''; 
+            examContainer.style.display = 'none';
+            timerContainer.style.display = 'none';
+            
+            // แสดงข้อความแจ้งเตือนผลการละเมิด
+            warningMessage.style.display = 'block';
+            violationReason.innerHTML = `สาเหตุ: ${reason}<br>ระบบได้ทำการระงับและยกเลิกการบันทึกข้อมูลของท่านเรียบร้อยแล้ว`;
+        }
+
+        // 4. กลไกการตรวจสอบพฤติกรรมการใช้งาน (Visibility and Focus Monitoring)
+        
+        // 4.1 ตรวจสอบสถานะการมองเห็นของหน้าเว็บผ่าน Page Visibility API
+        function handleVisibilityChange() {
+            if (document.hidden || document.visibilityState === 'hidden') {
+                if (isExamActive) {
+                    terminateExamination('ตรวจพบการสลับแท็บ (Tab Switching) หรือซ่อนหน้าต่างเบราว์เซอร์');
+                }
+            }
+        }
+
+        // 4.2 ตรวจสอบการสูญเสียจุดศูนย์สนใจของหน้าต่างเบราว์เซอร์ (Window Blur Event)
+        function handleWindowBlur() {
+            if (isExamActive) {
+                terminateExamination('ตรวจพบการละทิ้งหน้าต่างสอบ (Window Focus Lost) หรือการเปิดแอปพลิเคชันอื่นซ้อนทับ');
+            }
+        }
+
+        // การลงทะเบียนตัวรับเหตุการณ์ (Event Listeners) เข้ากับระบบตามมาตรฐาน DOM Level 2
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('blur', handleWindowBlur);
+
+    </script>
+</body>
+</html>
