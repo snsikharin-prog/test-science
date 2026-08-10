@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบการสอบออนไลน์พร้อมการควบคุมสภาพแวดล้อม</title>
+    <title>ระบบการสอบออนไลน์วิชาวิทยาศาสตร์ ชั้น ม.2</title>
     <style>
         body { 
             font-family: 'Sarabun', sans-serif; 
@@ -77,6 +77,7 @@
         const warningMessage = document.getElementById('warning-message');
         const violationReason = document.getElementById('violation-reason');
         const timerContainer = document.getElementById('timer-container');
+        const iframeElement = document.getElementById('google-form');
         let isExamActive = true;
 
         // 2. ฟังก์ชันกลไกการนับเวลาถอยหลัง (Interval-based Countdown Mechanism)
@@ -122,16 +123,27 @@
         function handleVisibilityChange() {
             if (document.hidden || document.visibilityState === 'hidden') {
                 if (isExamActive) {
-                    terminateExamination('ตรวจพบการสลับแท็บ (Tab Switching) หรือซ่อนหน้าต่างเบราว์เซอร์');
+                    terminateExamination('ตรวจพบการสลับแท็บ (Tab Switching) หรือย่อหน้าต่างเบราว์เซอร์');
                 }
             }
         }
 
         // 4.2 ตรวจสอบการสูญเสียจุดศูนย์สนใจของหน้าต่างเบราว์เซอร์ (Window Blur Event)
         function handleWindowBlur() {
-            if (isExamActive) {
-                terminateExamination('ตรวจพบการละทิ้งหน้าต่างสอบ (Window Focus Lost) หรือการเปิดแอปพลิเคชันอื่นซ้อนทับ');
-            }
+            if (!isExamActive) return;
+
+            // ฟังก์ชัน setTimeout ใช้เพื่อหน่วงเวลาการประมวลผล 100 มิลลิวินาที 
+            // เพื่อเปิดโอกาสให้ระบบปฏิบัติการของเบราว์เซอร์ปรับปรุงค่าคุณสมบัติ document.activeElement ให้เสร็จสมบูรณ์
+            setTimeout(() => {
+                const activeElement = document.activeElement;
+                
+                // ตรวจสอบว่าจุดศูนย์สนใจ (Focus) ถูกย้ายไปที่ใด
+                // หากย้ายไปที่ iframe (คือผู้ใช้กำลังกดทำข้อสอบ) ระบบจะอนุญาตให้ดำเนินการต่อ
+                // หากไม่ได้ย้ายไปที่ iframe แสดงว่าผู้ใช้สลับหน้าต่างไปยังแอปพลิเคชันอื่น
+                if (activeElement !== iframeElement) {
+                    terminateExamination('ตรวจพบการสลับหน้าต่างโปรแกรม หรือการใช้งานแอปพลิเคชันอื่น (Application Switching)');
+                }
+            }, 100);
         }
 
         // การลงทะเบียนตัวรับเหตุการณ์ (Event Listeners) เข้ากับระบบตามมาตรฐาน DOM Level 2
