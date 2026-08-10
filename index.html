@@ -3,69 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบการสอบออนไลน์วิชาวิทยาศาสตร์ ชั้น ม.2</title>
+    <title>ระบบการสอบออนไลน์พร้อมการควบคุมสภาพแวดล้อม</title>
+    <!-- นำเข้าแบบอักษร Sarabun จาก Google Fonts เพื่อความเป็นทางการ -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* การตั้งค่าตัวแปรสีและโครงสร้างพื้นฐาน (CSS Variables & Reset) */
+        :root {
+            --primary-color: #1A365D; /* สีน้ำเงินเข้ม สื่อถึงความน่าเชื่อถือทางวิชาการ */
+            --secondary-color: #2B6CB0;
+            --danger-color: #E53E3E; /* สีแดง สำหรับการแจ้งเตือนและข้อผิดพลาด */
+            --background-color: #F7FAFC;
+            --surface-color: #FFFFFF;
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            --border-radius: 12px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body { 
             font-family: 'Sarabun', sans-serif; 
-            text-align: center; 
-            margin-top: 30px; 
-            background-color: #f4f6f9;
+            background-color: var(--background-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        #timer-container { 
-            font-size: 24px; 
-            font-weight: bold; 
-            color: #D32F2F; 
-            margin-bottom: 20px; 
-            padding: 10px;
-            background-color: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            display: inline-block;
+
+        /* ส่วนหัวของหน้าเว็บ (Header Section) */
+        .system-header {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: var(--surface-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* ส่วนแสดงเวลาถอยหลัง (Timer Component) */
+        .timer-badge {
+            background-color: var(--surface-color);
+            color: var(--danger-color);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid #FED7D7;
+        }
+
+        /* พื้นที่แสดงข้อสอบ (Examination Container) */
         #exam-container { 
             width: 100%; 
-            max-width: 900px; 
-            height: 800px; 
-            margin: 0 auto; 
-            border: 2px solid #bdbdbd; 
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-            background-color: #ffffff;
+            max-width: 1000px; 
+            height: calc(100vh - 120px); 
+            margin: 20px auto; 
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
         }
+
         iframe { 
             width: 100%; 
             height: 100%; 
             border: none; 
+            background-color: transparent;
         }
-        #warning-message { 
+
+        /* ส่วนแสดงผลเมื่อมีการละเมิดเงื่อนไข (Overlay Warning Modal) */
+        #warning-overlay { 
             display: none; 
-            color: #c62828; 
-            font-size: 22px; 
-            font-weight: bold; 
-            margin-top: 100px; 
-            padding: 20px;
-            background-color: #ffcdd2;
-            border: 2px solid #ef5350;
-            border-radius: 8px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 32, 44, 0.95); /* สีพื้นหลังกึ่งโปร่งใสที่มืดสนิท */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .warning-card {
+            background-color: var(--surface-color);
+            padding: 3rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 90%;
+            text-align: center;
+            border-top: 6px solid var(--danger-color);
+            animation: slideIn 0.4s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .warning-icon {
+            font-size: 4rem;
+            color: var(--danger-color);
+            margin-bottom: 1rem;
+        }
+
+        .warning-title {
+            color: var(--danger-color);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .warning-detail {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            line-height: 1.6;
+            background-color: #FFF5F5;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #FEB2B2;
+            margin-top: 1.5rem;
+        }
+
+        /* การปรับการแสดงผลบนอุปกรณ์เคลื่อนที่ (Responsive Media Queries) */
+        @media (max-width: 768px) {
+            .system-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                padding: 1rem;
+            }
+            #exam-container {
+                height: calc(100vh - 160px);
+                margin: 10px auto;
+                border-radius: 0;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div id="timer-container">เวลาที่เหลือสำหรับการทำข้อสอบ: <span id="time">10:00</span> นาที</div>
-
-    <!-- ส่วนแสดงผลเมื่อมีการละเมิดเงื่อนไขการสอบ -->
-    <div id="warning-message">
-        การสอบถูกยกเลิกโดยอัตโนมัติ<br>
-        <span id="violation-reason" style="font-size: 18px; font-weight: normal;"></span>
-    </div>
+    <!-- แถบนำทางและควบคุมสถานะด้านบน -->
+    <header class="system-header" id="main-header">
+        <div class="header-title">ระบบการสอบออนไลน์ (Online Examination System)</div>
+        <div class="timer-badge" id="timer-container">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="time">10:00</span>
+        </div>
+    </header>
 
     <!-- ส่วนพื้นที่แสดงข้อสอบ -->
-    <div id="exam-container">
+    <main id="exam-container">
         <!-- หมายเหตุ: เปลี่ยน URL_ของ_GOOGLE_FORM_ที่นี่ เป็นลิงก์ฟอร์มที่ต้องการใช้งานจริง -->
-        <iframe id="google-form" src="https://docs.google.com/forms/d/e/1FAIpQLSfr-wkyN78zt4kd91l_AWCK2sGGpWZFfJWsG8JcRkRYIbZjjQ/viewform?usp=dialog" frameborder="0" marginheight="0" marginwidth="0">กำลังโหลดกลไกการสอบ...</iframe>
+        <iframe id="google-form" src="https://docs.google.com/forms/d/e/1FAIpQLSfr-wkyN78zt4kd91l_AWCK2sGGpWZFfJWsG8JcRkRYIbZjjQ/viewform?usp=dialog"></iframe>
+    </main>
+
+    <!-- หน้าต่างซ้อนทับเมื่อเกิดการละเมิดเงื่อนไข -->
+    <div id="warning-overlay">
+        <div class="warning-card">
+            <div class="warning-icon">⚠️</div>
+            <h1 class="warning-title">การสอบถูกยกเลิกโดยอัตโนมัติ</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted);">ระบบตรวจพบการละเมิดเงื่อนไขการควบคุมสภาพแวดล้อมการสอบ</p>
+            <div class="warning-detail" id="violation-reason">
+                <!-- ข้อมูลสาเหตุการละเมิดจะถูกแทรกที่นี่ผ่าน JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -74,13 +205,13 @@
         let timeInSeconds = DURATION_MINUTES * 60; // 600 วินาที
         const timeDisplay = document.getElementById('time');
         const examContainer = document.getElementById('exam-container');
-        const warningMessage = document.getElementById('warning-message');
+        const warningOverlay = document.getElementById('warning-overlay');
         const violationReason = document.getElementById('violation-reason');
-        const timerContainer = document.getElementById('timer-container');
+        const mainHeader = document.getElementById('main-header');
         const iframeElement = document.getElementById('google-form');
         let isExamActive = true;
 
-        // 2. ฟังก์ชันกลไกการนับเวลาถอยหลัง (Interval-based Countdown Mechanism)
+        // 2. ฟังก์ชันกลไกการนับเวลาถอยหลัง
         const countdownTimer = setInterval(() => {
             if (!isExamActive) {
                 clearInterval(countdownTimer);
@@ -91,62 +222,57 @@
             let minutes = Math.floor(timeInSeconds / 60);
             let seconds = timeInSeconds % 60;
 
-            // การจัดการรูปแบบการแสดงผลตัวเลข
             let displayMinutes = minutes < 10 ? '0' + minutes : minutes;
             let displaySeconds = seconds < 10 ? '0' + seconds : seconds;
 
             timeDisplay.textContent = `${displayMinutes}:${displaySeconds}`;
 
+            // เพิ่มการเปลี่ยนสีเมื่อเวลาเหลือน้อยกว่า 1 นาที (60 วินาที)
+            if (timeInSeconds <= 60) {
+                document.getElementById('timer-container').style.backgroundColor = '#FFF5F5';
+                document.getElementById('timer-container').style.borderColor = '#E53E3E';
+            }
+
             if (timeInSeconds <= 0) {
                 clearInterval(countdownTimer);
-                terminateExamination('ระบบหมดเวลาการทำข้อสอบตามที่กำหนด');
+                terminateExamination('ระบบหมดเวลาการทำข้อสอบตามที่กำหนด (Time Expired)');
             }
         }, 1000);
 
-        // 3. ฟังก์ชันยุติการสอบและทำลายข้อมูล (Termination and DOM Destruction)
+        // 3. ฟังก์ชันยุติการสอบและทำลายข้อมูล
         function terminateExamination(reason) {
             isExamActive = false;
             
-            // ลบ iframe ออกจาก Document Object Model (DOM) เพื่อตัดการเชื่อมต่อกับเซิร์ฟเวอร์
+            // ลบเนื้อหาเพื่อตัดการเชื่อมต่อและแสดงหน้าต่างซ้อนทับ (Overlay)
             examContainer.innerHTML = ''; 
             examContainer.style.display = 'none';
-            timerContainer.style.display = 'none';
+            mainHeader.style.display = 'none';
             
-            // แสดงข้อความแจ้งเตือนผลการละเมิด
-            warningMessage.style.display = 'block';
-            violationReason.innerHTML = `สาเหตุ: ${reason}<br>ระบบได้ทำการระงับและยกเลิกการบันทึกข้อมูลของท่านเรียบร้อยแล้ว`;
+            warningOverlay.style.display = 'flex';
+            violationReason.innerHTML = `<strong>สาเหตุ:</strong> ${reason}<br><br><span style="color: #E53E3E; font-weight: 600;">ระบบได้ทำการระงับสิทธิ์และยกเลิกการบันทึกข้อมูลของท่านเรียบร้อยแล้ว</span>`;
         }
 
-        // 4. กลไกการตรวจสอบพฤติกรรมการใช้งาน (Visibility and Focus Monitoring)
+        // 4. กลไกการตรวจสอบพฤติกรรมการใช้งาน
         
-        // 4.1 ตรวจสอบสถานะการมองเห็นของหน้าเว็บผ่าน Page Visibility API
         function handleVisibilityChange() {
             if (document.hidden || document.visibilityState === 'hidden') {
                 if (isExamActive) {
-                    terminateExamination('ตรวจพบการสลับแท็บ (Tab Switching) หรือย่อหน้าต่างเบราว์เซอร์');
+                    terminateExamination('ตรวจพบการสลับแท็บ (Tab Switching) หรือซ่อนหน้าต่างเบราว์เซอร์');
                 }
             }
         }
 
-        // 4.2 ตรวจสอบการสูญเสียจุดศูนย์สนใจของหน้าต่างเบราว์เซอร์ (Window Blur Event)
         function handleWindowBlur() {
             if (!isExamActive) return;
 
-            // ฟังก์ชัน setTimeout ใช้เพื่อหน่วงเวลาการประมวลผล 100 มิลลิวินาที 
-            // เพื่อเปิดโอกาสให้ระบบปฏิบัติการของเบราว์เซอร์ปรับปรุงค่าคุณสมบัติ document.activeElement ให้เสร็จสมบูรณ์
             setTimeout(() => {
                 const activeElement = document.activeElement;
-                
-                // ตรวจสอบว่าจุดศูนย์สนใจ (Focus) ถูกย้ายไปที่ใด
-                // หากย้ายไปที่ iframe (คือผู้ใช้กำลังกดทำข้อสอบ) ระบบจะอนุญาตให้ดำเนินการต่อ
-                // หากไม่ได้ย้ายไปที่ iframe แสดงว่าผู้ใช้สลับหน้าต่างไปยังแอปพลิเคชันอื่น
                 if (activeElement !== iframeElement) {
                     terminateExamination('ตรวจพบการสลับหน้าต่างโปรแกรม หรือการใช้งานแอปพลิเคชันอื่น (Application Switching)');
                 }
             }, 100);
         }
 
-        // การลงทะเบียนตัวรับเหตุการณ์ (Event Listeners) เข้ากับระบบตามมาตรฐาน DOM Level 2
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleWindowBlur);
 
